@@ -78,6 +78,12 @@
 				"type": "checkbox"
 			},
 			{
+				"key": "highlight-empty-only",
+				"tt_name": "highlight-empty-only",
+				"name": "Highlight only empty fields?</br><em>If unchecked, all required and requested fields will be highlighted after the warning is displayed.</em>",
+				"type": "checkbox"
+			},
+			{
 				"key": "requested-hlcolour",
 				"tt_name": "requested-hlcolour",
 				"name": "Highlight colour for requested fields<br/><em>Default: light blue</em>",

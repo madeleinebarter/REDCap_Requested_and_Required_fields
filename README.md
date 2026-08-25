@@ -44,6 +44,7 @@ This module can be configured with the following project settings:
 | Cancel button text | "Review Response" | Text for cancel button. |
 | Submit button text | "Submit Now" | Text for submit button. |
 | Highlight fields after displaying warning? | false | If true, highlights required and requested fields after cancelling the modal window. |
+| Highlight only empty fields? | false (**true recommended**) | If checked, only those requested/required fields that are still empty are highlighted after cancelling the modal window, matching what was just listed in the modal. If unchecked, all requested/required fields are highlighted, regardless of whether they have been completed, which can be inconsistent with the modal (which only ever lists the fields that are actually empty). Defaults to false to preserve legacy behaviour for existing projects, but checking this is recommended for new projects, for consistency between the modal and the post-warning highlighting. |
 | Highlight colour for requested fields | "#d2e0ff" (light blue) | Colour used to highlight requested fields. |
 | Highlight colour for required fields | "#ffd2e0" (light red) | Colour used to highlight required fields. |
 | Disable green highlight | false | Disable the default green highlighting on all fields, as this will visually conflict with the highlighting added by this module. |
@@ -78,3 +79,4 @@ These instructions are also available in [GitHub](https://github.com/jangari/red
 | 1.1.0 | Added support for fields marked as required in the project metadata. Fixes PHP8.0 compatibility. |
 | 1.1.1 | Fixes a bug in which the module would not work with fields marked `@REQUIRED` if the option to also treat fields marked required in the metadata was not checked. |
 | 1.1.2 | Allows HTML to be safely inserted in action tags, and also allows HTML and rich text from field descriptions to be correctly output. |
+| 1.2.0 | Adds an option to highlight only empty requested/required fields, rather than all of them, after cancelling the modal window. |

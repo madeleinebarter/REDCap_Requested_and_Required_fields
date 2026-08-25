@@ -103,6 +103,7 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
             $('button[name=\"submit-btn-saverecord\"]').attr('onclick','$(this).button(\"disable\");checkReqdFields();return false;');
             var requestedFields = " . json_encode($requestedFields) . ";
             var requiredFields = " . json_encode($requiredFields) . ";
+            var highlightEmptyOnly = " . ($settings['highlight-empty-only'] == '1' ? 'true' : 'false') . ";
             $.each(requestedFields, function(fieldName, fieldInfo) {
                 var fieldRow = $('tr#'+fieldName+'-tr');
                 var fieldType = fieldInfo.type;
@@ -153,6 +154,15 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 					case 'checkbox':
 						fieldIsEmpty = (!$('tr#' + fieldName+ '-tr').find('input[type=\"checkbox\"]').is(':checked'));
 						break;
+					case 'calc':
+						fieldIsEmpty = false;
+						break;
+					case 'descriptive':
+						fieldIsEmpty = false;
+						break;
+					case 'advcheckbox':
+						fieldIsEmpty = false;
+						break;
                 }
                 return fieldIsEmpty;
             }
@@ -171,6 +181,13 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
                 var fieldRow = $('tr#'+fieldName+'-tr');
 				fieldRow.addClass(className);
 			};
+            function applyHighlightClasses(fieldArray, className){
+                $.each(fieldArray, function(fieldName, fieldInfo) {
+                    if (!highlightEmptyOnly || fieldIsEmpty(fieldName, fieldInfo.type)) {
+                        addClassToField(fieldName, className);
+                    }
+                });
+            };
             function checkReqdFields(){
 				$('#requested-list').empty();
 				$('#required-list').empty();
@@ -227,22 +244,14 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 						// Re-enable the submit button
 						$('#confirmationModal').modal('hide');
 						$('button[name=\"submit-btn-saverecord\"]').button('enable')
-						$.each(requestedFields, function(fieldName) {
-							addClassToField(fieldName, 'em-requested');
-						});
-						$.each(requiredFields, function(fieldName) {
-							addClassToField(fieldName, 'em-required');
-						});
+						applyHighlightClasses(requestedFields, 'em-requested');
+						applyHighlightClasses(requiredFields, 'em-required');
 					});
 					// Re-enable the submit button if the modal is closed without confirmation
 					$('#confirmationModal').on('hidden.bs.modal', function () {
 						$('button[name=\"submit-btn-saverecord\"]').button('enable')
-						$.each(requestedFields, function(fieldName) {
-							addClassToField(fieldName, 'em-requested');
-						});
-						$.each(requiredFields, function(fieldName) {
-							addClassToField(fieldName, 'em-required');
-						});
+						applyHighlightClasses(requestedFields, 'em-requested');
+						applyHighlightClasses(requiredFields, 'em-required');
 					});
                 }
             };
