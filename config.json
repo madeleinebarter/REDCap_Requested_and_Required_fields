@@ -4,7 +4,7 @@
 		"namespace": "INTERSECT\\RequestedAndRequiredFields",
 		"description": "Provides functionality for requesting a response to a field, and displays a warning to survey respondents if any requested fields are missing a value. For completeness, this module also allows required fields to be treated in the same way. Fields can be annotated with @REQUESTED or @REQUIRED, both of which take an optional description, which is shown to the user. If the description is omitted, the field label is shown instead.",
 		"tt_description": "description",
-		"framework-version": 15,
+		"framework-version": 17,
 		"authors": [
 			{
 				"name": "Aidan Wilson",
