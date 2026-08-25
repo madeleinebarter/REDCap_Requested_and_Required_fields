@@ -100,7 +100,7 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 		$settings['requested-label-colour'] = $settings['requested-label-colour'] ?? $this->tt('requested-label-colour-hex');
 
         echo "<script>
-            $('button[name=\"submit-btn-saverecord\"]').attr('onclick','$(this).button(\"disable\");checkReqdFields();return false;');
+            $('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]').attr('onclick','$(this).button(\"disable\");checkReqdFields(this);return false;');
             var requestedFields = " . json_encode($requestedFields) . ";
             var requiredFields = " . json_encode($requiredFields) . ";
             var highlightEmptyOnly = " . ($settings['highlight-empty-only'] == '1' ? 'true' : 'false') . ";
@@ -188,13 +188,13 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
                     }
                 });
             };
-            function checkReqdFields(){
+            function checkReqdFields(clickedBtn){
 				$('#requested-list').empty();
 				$('#required-list').empty();
                 var emptyRequested = createEmptyReport(requestedFields);
                 var emptyRequired = createEmptyReport(requiredFields);
                 if (emptyRequested.length + emptyRequired.length == 0){
-                    dataEntrySubmit();
+                    dataEntrySubmit(clickedBtn);
                 } else {
 					if (emptyRequested.length > 0) {
 						$('#modal-requested-header').show();
@@ -236,20 +236,19 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 					$('button#confirmSubmit').on('click', function() {
 						// Hide the modal
 						$('#confirmationModal').modal('hide');
-						// Call the original function
-						dataEntrySubmit();
+						dataEntrySubmit(clickedBtn);
 					});
 					// Handle the Cancel button click in the modal
 					$('#cancelSubmit, .close').on('click', function() {
 						// Re-enable the submit button
 						$('#confirmationModal').modal('hide');
-						$('button[name=\"submit-btn-saverecord\"]').button('enable')
+						$('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]').button('enable')
 						applyHighlightClasses(requestedFields, 'em-requested');
 						applyHighlightClasses(requiredFields, 'em-required');
 					});
 					// Re-enable the submit button if the modal is closed without confirmation
 					$('#confirmationModal').on('hidden.bs.modal', function () {
-						$('button[name=\"submit-btn-saverecord\"]').button('enable')
+						$('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]').button('enable')
 						applyHighlightClasses(requestedFields, 'em-requested');
 						applyHighlightClasses(requiredFields, 'em-required');
 					});

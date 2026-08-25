@@ -80,3 +80,4 @@ These instructions are also available in [GitHub](https://github.com/jangari/red
 | 1.1.1 | Fixes a bug in which the module would not work with fields marked `@REQUIRED` if the option to also treat fields marked required in the metadata was not checked. |
 | 1.1.2 | Allows HTML to be safely inserted in action tags, and also allows HTML and rich text from field descriptions to be correctly output. |
 | 1.2.0 | Adds an option to highlight only empty requested/required fields, rather than all of them, after cancelling the modal window. |
+| 1.2.1 | Fixes a bug that prevented the module working on repeating survey if the 'Take this survey again' button was used. |
