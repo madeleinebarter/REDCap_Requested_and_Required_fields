@@ -94,10 +94,26 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 		$settings['modal-cancel'] = $settings['modal-cancel'] ?? $this->tt('modal-cancel-text');
 		$settings['modal-submit'] = $settings['modal-submit'] ?? $this->tt('modal-submit-text');
 
+		// Sanitize these project-configured text settings before they reach the browser
+		foreach (['modal-title', 'modal-requested-header', 'modal-required-header', 'modal-footer-norequired',
+				  'modal-footer-required', 'requested-label', 'modal-cancel', 'modal-submit'] as $textSetting) {
+			$settings[$textSetting] = REDCap::filterHtml($settings[$textSetting]);
+		};
+
 		// Colour defaults
 		$settings['requested-hlcolour'] = $settings['requested-hlcolour'] ?? $this->tt('requested-hlcolour-hex');
 		$settings['required-hlcolour'] = $settings['required-hlcolour'] ?? $this->tt('required-hlcolour-hex');
 		$settings['requested-label-colour'] = $settings['requested-label-colour'] ?? $this->tt('requested-label-colour-hex');
+
+		// Colour settings are interpolated directly into inline CSS/style attributes with no
+		// quoting at all, so they must be validated as an actual hex colour rather than merely
+		// HTML-filtered; anything else falls back to the module's default.
+		foreach (['requested-hlcolour' => 'requested-hlcolour-hex', 'required-hlcolour' => 'required-hlcolour-hex',
+				  'requested-label-colour' => 'requested-label-colour-hex'] as $colourSetting => $defaultKey) {
+			if (!preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $settings[$colourSetting])) {
+				$settings[$colourSetting] = $this->tt($defaultKey);
+			};
+		};
 
         echo "<script>
             $('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]').attr('onclick','$(this).button(\"disable\");checkReqdFields(this);return false;');
@@ -216,7 +232,7 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 						$('#modal-required-header').show();
 						// Disable modal's submit button
 						$('button#confirmSubmit').prop('disabled', true);
-						$('#modal-action').text('". $settings['modal-footer-required']  ."');
+						$('#modal-action').text(". json_encode($settings['modal-footer-required']) .");
 						// Create a <ul> element
 						var requiredUl = document.createElement('ul');
 						// Loop through the descriptions and create <li> elements
@@ -292,7 +308,7 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 			</div>";
 		if ($settings['show-requested']) {
 			echo "<script>
-				var requestedLabelDiv = '<div class=\"requestedlabel\" aria-label=\"response requested\">" . $settings['requested-label'] . "</div>';
+				var requestedLabelDiv = '<div class=\"requestedlabel\" aria-label=\"response requested\">' + ". json_encode($settings['requested-label']) ." + '</div>';
 				document.addEventListener('DOMContentLoaded', function() {
 					$.each(requestedFields, function(fieldName) {
 						var fieldRow = $('tr#'+fieldName+'-tr');

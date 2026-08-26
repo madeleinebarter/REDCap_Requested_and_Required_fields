@@ -81,3 +81,4 @@ These instructions are also available in [GitHub](https://github.com/jangari/red
 | 1.1.2 | Allows HTML to be safely inserted in action tags, and also allows HTML and rich text from field descriptions to be correctly output. |
 | 1.2.0 | Adds an option to highlight only empty requested/required fields, rather than all of them, after cancelling the modal window. |
 | 1.2.1 | Fixes a bug that prevented the module working on repeating survey if the 'Take this survey again' button was used. |
+| 1.2.2 | Fixes a cross-site scripting (XSS) vulnerability in which several project-configured modal, button, and label text settings were rendered to survey respondents without sanitization, and in which highlight/label colour settings were interpolated into inline CSS without validation. |
