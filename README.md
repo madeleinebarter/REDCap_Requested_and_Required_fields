@@ -10,11 +10,7 @@ This module respects fields marked @HIDDEN(-SURVEY) and also those that are hidd
 
 ## Limitations
 
-This module does not play nicely with embedded fields. Perhaps this could be fixed, but at the moment it's just a limitation.
-
 Unlike traditional required fields, wherein submitting the page commits other values to the database and sets the survey as partially complete, with this module enabled, clicking 'submit' does _not_ save any other entered values. Again, perhaps this could be fixed by running an AJAX call to save the data.
-
-~~This module only considers fields to be required if they are annotated with @REQUIRED. It might be an idea in future to take fields marked Required in the designer and treat them in the same way.~~
 
 ## Installation
 
@@ -71,6 +67,10 @@ Or by adding this reference to your BibTeX database:
 ```
 These instructions are also available in [GitHub](https://github.com/jangari/redcap_requested_and_required_fields/) under 'Cite This Repository'.
 
+## AI Involvement Declaration
+
+Claude Sonnet 5 used for advice on security best practice and for code review. All design and implementation decisions made by the author.
+
 ## Changelog
 
 | Version | Description |
@@ -82,3 +82,4 @@ These instructions are also available in [GitHub](https://github.com/jangari/red
 | 1.2.0 | Adds an option to highlight only empty requested/required fields, rather than all of them, after cancelling the modal window. |
 | 1.2.1 | Fixes a bug that prevented the module working on repeating survey if the 'Take this survey again' button was used. |
 | 1.2.2 | Fixes a cross-site scripting (XSS) vulnerability in which several project-configured modal, button, and label text settings were rendered to survey respondents without sanitization, and in which highlight/label colour settings were interpolated into inline CSS without validation. |
+| 1.3.0 | Adds support for Field Embedding: requested/required fields (including radio, Yes-No/True-False, and checkbox fields) are now correctly detected, checked, and highlighted wherever their controls have been relocated to on the page, rather than only in their original row. |
