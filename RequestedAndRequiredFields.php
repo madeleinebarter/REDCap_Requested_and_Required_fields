@@ -120,41 +120,63 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
             var requestedFields = " . json_encode($requestedFields) . ";
             var requiredFields = " . json_encode($requiredFields) . ";
             var highlightEmptyOnly = " . ($settings['highlight-empty-only'] == '1' ? 'true' : 'false') . ";
+
+            // Return the actual data-entry controls for a REDCap field. This works
+            // whether the control is in its normal row or relocated by Field Embedding.
+            function getFieldControls(fieldName) {
+                return $(
+                    '[name=\"'+fieldName+'\"], ' +
+                    '[name^=\"'+fieldName+'___\"], ' +
+                    'input[name=\"__chkn__'+fieldName+'\"]'
+                );
+            }
+
+            function fieldIsVisible(fieldName) {
+                var fieldRow = $('tr#'+fieldName+'-tr');
+                if (fieldRow.is(':visible')) {
+                    return true;
+                }
+                return getFieldControls(fieldName).filter(':visible').length > 0;
+            }
+
             $.each(requestedFields, function(fieldName, fieldInfo) {
                 var fieldRow = $('tr#'+fieldName+'-tr');
-                var fieldType = fieldInfo.type;
-                var desc = fieldInfo.description;
-                if (!fieldRow.length) {
+                if (!fieldRow.length && !getFieldControls(fieldName).length) {
                     delete requestedFields[fieldName];
+                    return;
                 }
                 var fieldClass = fieldRow.attr('class');
                 if (fieldClass && fieldClass.indexOf('@HIDDEN') !== -1) {
                     delete requestedFields[fieldName];
                 }
             });
+
             $.each(requiredFields, function(fieldName, fieldInfo) {
                 var fieldRow = $('tr#'+fieldName+'-tr');
-                var fieldType = fieldInfo.type;
-                var desc = fieldInfo.description;
-                if (!fieldRow.length) {
+                if (!fieldRow.length && !getFieldControls(fieldName).length) {
                     delete requiredFields[fieldName];
+                    return;
                 }
                 var fieldClass = fieldRow.attr('class');
                 if (fieldClass && fieldClass.indexOf('@HIDDEN') !== -1) {
                     delete requiredFields[fieldName];
                 }
             });
+
             function fieldIsEmpty(fieldName, fieldType){
                 var fieldIsEmpty = false;
-                var fieldRow = $('tr#'+fieldName+'-tr');
-                if (!fieldRow.is(':visible')) {
+                if (!fieldIsVisible(fieldName)) {
                     return fieldIsEmpty;
                 }
                 switch (fieldType) {
-                    case 'text':
                     case 'radio':
                     case 'truefalse':
                     case 'yesno':
+                        fieldIsEmpty = !getFieldControls(fieldName)
+                            .filter('input[type=\"radio\"]')
+                            .is(':checked');
+                        break;
+                    case 'text':
                     case 'slider':
                     case 'file':
                     case 'signature':
@@ -166,47 +188,82 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
                     case 'dropdown':
                     case 'sql':
                         fieldIsEmpty = ($('select[name=\"'+fieldName+'\"]').val()==='');
-						break;
-					case 'checkbox':
-						fieldIsEmpty = (!$('tr#' + fieldName+ '-tr').find('input[type=\"checkbox\"]').is(':checked'));
-						break;
-					case 'calc':
-						fieldIsEmpty = false;
-						break;
-					case 'descriptive':
-						fieldIsEmpty = false;
-						break;
-					case 'advcheckbox':
-						fieldIsEmpty = false;
-						break;
+                        break;
+                    case 'checkbox':
+                        fieldIsEmpty = !getFieldControls(fieldName)
+                            .filter('input[type=\"checkbox\"]')
+                            .is(':checked');
+                        break;
+                    case 'calc':
+                    case 'descriptive':
+                    case 'advcheckbox':
+                        fieldIsEmpty = false;
+                        break;
                 }
                 return fieldIsEmpty;
             }
+
             function createEmptyReport(fieldArray){
                 var empties = [];
                 $.each(fieldArray, function(fieldName, fieldInfo) {
-                    var fieldType = fieldInfo.type;
-                    var fieldDesc = fieldInfo.description;
-                    if (fieldIsEmpty(fieldName, fieldType)) {
-                        empties.push(fieldDesc);
+                    if (fieldIsEmpty(fieldName, fieldInfo.type)) {
+                        empties.push({
+                            name: fieldName,
+                            type: fieldInfo.type,
+                            description: fieldInfo.description
+                        });
                     }
                 });
                 return empties;
             };
+
+            function clearFieldHighlights(){
+                $('tr.em-requested').removeClass('em-requested');
+                $('tr.em-required').removeClass('em-required');
+                $('tr.em-requested-embedded-row').removeClass('em-requested-embedded-row');
+                $('tr.em-required-embedded-row').removeClass('em-required-embedded-row');
+                $('.em-requested-embedded').removeClass('em-requested-embedded');
+                $('.em-required-embedded').removeClass('em-required-embedded');
+            };
+
 			function addClassToField(fieldName, className){
                 var fieldRow = $('tr#'+fieldName+'-tr');
-				fieldRow.addClass(className);
+                if (fieldRow.is(':visible')) {
+					fieldRow.addClass(className);
+                    return;
+                }
+
+                var controls = getFieldControls(fieldName).filter(':visible');
+                var containingRow = controls.first().closest('tr');
+                if (containingRow.length) {
+                    containingRow.addClass(className + '-embedded-row');
+                } else {
+                    controls.addClass(className + '-embedded');
+                }
 			};
-            function applyHighlightClasses(fieldArray, className){
-                $.each(fieldArray, function(fieldName, fieldInfo) {
-                    if (!highlightEmptyOnly || fieldIsEmpty(fieldName, fieldInfo.type)) {
+
+            function applyHighlightClasses(fieldArray, emptyFields, className){
+                if (highlightEmptyOnly) {
+                    emptyFields.forEach(function(fieldInfo) {
+                        addClassToField(fieldInfo.name, className);
+                    });
+                } else {
+                    $.each(fieldArray, function(fieldName) {
                         addClassToField(fieldName, className);
-                    }
-                });
+                    });
+                }
             };
+
+            function highlightFields(emptyRequested, emptyRequired){
+                clearFieldHighlights();
+                applyHighlightClasses(requestedFields, emptyRequested, 'em-requested');
+                applyHighlightClasses(requiredFields, emptyRequired, 'em-required');
+            };
+
             function checkReqdFields(clickedBtn){
 				$('#requested-list').empty();
 				$('#required-list').empty();
+                clearFieldHighlights();
                 var emptyRequested = createEmptyReport(requestedFields);
                 var emptyRequired = createEmptyReport(requiredFields);
                 if (emptyRequested.length + emptyRequired.length == 0){
@@ -214,14 +271,11 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
                 } else {
 					if (emptyRequested.length > 0) {
 						$('#modal-requested-header').show();
-						// Re-enable the modal's submit button
 						$('button#confirmSubmit').prop('disabled', false);
-						// Create a <ul> element
 						var requestedUl = document.createElement('ul');
-						// Loop through the descriptions and create <li> elements
-						emptyRequested.forEach(function(description) {
+						emptyRequested.forEach(function(fieldInfo) {
 							var li = document.createElement('li');
-							li.innerHTML = description;
+							li.innerHTML = fieldInfo.description;
 							requestedUl.appendChild(li);
 						});
 						document.getElementById('requested-list').appendChild(requestedUl);
@@ -230,44 +284,42 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 					}
 					if (emptyRequired.length > 0) {
 						$('#modal-required-header').show();
-						// Disable modal's submit button
 						$('button#confirmSubmit').prop('disabled', true);
 						$('#modal-action').text(". json_encode($settings['modal-footer-required']) .");
-						// Create a <ul> element
 						var requiredUl = document.createElement('ul');
-						// Loop through the descriptions and create <li> elements
-						emptyRequired.forEach(function(description) {
+						emptyRequired.forEach(function(fieldInfo) {
 							var li = document.createElement('li');
-							li.innerHTML = description;
+							li.innerHTML = fieldInfo.description;
 							requiredUl.appendChild(li);
 						});
 						document.getElementById('required-list').appendChild(requiredUl);
 					} else {
 						$('#modal-required-header').hide();
+                        $('#modal-action').text(". json_encode($settings['modal-footer-norequired']) .");
 					}
 
-					// Show modal
 					$('#confirmationModal').modal('show');
-					// Handle the OK button click in the modal
-					$('button#confirmSubmit').on('click', function() {
-						// Hide the modal
-						$('#confirmationModal').modal('hide');
-						dataEntrySubmit(clickedBtn);
-					});
-					// Handle the Cancel button click in the modal
-					$('#cancelSubmit, .close').on('click', function() {
-						// Re-enable the submit button
-						$('#confirmationModal').modal('hide');
-						$('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]').button('enable')
-						applyHighlightClasses(requestedFields, 'em-requested');
-						applyHighlightClasses(requiredFields, 'em-required');
-					});
-					// Re-enable the submit button if the modal is closed without confirmation
-					$('#confirmationModal').on('hidden.bs.modal', function () {
-						$('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]').button('enable')
-						applyHighlightClasses(requestedFields, 'em-requested');
-						applyHighlightClasses(requiredFields, 'em-required');
-					});
+                    $('button#confirmSubmit')
+                        .off('click.requestedRequired')
+                        .on('click.requestedRequired', function() {
+						    $('#confirmationModal').modal('hide');
+                            dataEntrySubmit(clickedBtn);
+                        });
+
+                    $('#cancelSubmit, .close')
+                        .off('click.requestedRequired')
+                        .on('click.requestedRequired', function() {
+                            $('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]')
+                                .button('enable');
+                        });
+
+                    $('#confirmationModal')
+                        .off('hidden.bs.modal.requestedRequired')
+                        .on('hidden.bs.modal.requestedRequired', function () {
+                            $('button[name=\"submit-btn-saverecord\"], button[name=\"submit-btn-saverepeat\"]')
+                                .button('enable');
+                            highlightFields(emptyRequested, emptyRequired);
+                        });
                 }
             };
 		</script>";
@@ -280,6 +332,22 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 				tr.em-required .labelrc, tr.em-required .data {
 					background: " . $settings['required-hlcolour'] . ";
 				}
+                tr.em-requested-embedded-row > td {
+                    background: " . $settings['requested-hlcolour'] . " !important;
+                }
+                tr.em-required-embedded-row > td {
+                    background: " . $settings['required-hlcolour'] . " !important;
+                }
+                .em-requested-embedded {
+                    outline: 3px solid " . $settings['requested-hlcolour'] . " !important;
+                    outline-offset: 2px;
+                    border-radius: 3px;
+                }
+                .em-required-embedded {
+                    outline: 3px solid " . $settings['required-hlcolour'] . " !important;
+                    outline-offset: 2px;
+                    border-radius: 3px;
+                }
 			</style>";
 		}
 
