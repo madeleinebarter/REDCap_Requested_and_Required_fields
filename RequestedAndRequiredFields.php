@@ -136,7 +136,9 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
                 if (fieldRow.is(':visible')) {
                     return true;
                 }
-                return getFieldControls(fieldName).filter(':visible').length > 0;
+                var controls = getFieldControls(fieldName);
+                var embeddedField = controls.first().closest('.rc-field-embed');
+                return embeddedField.length > 0 && embeddedField.is(':visible');
             }
 
             $.each(requestedFields, function(fieldName, fieldInfo) {
@@ -220,8 +222,6 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
             function clearFieldHighlights(){
                 $('tr.em-requested').removeClass('em-requested');
                 $('tr.em-required').removeClass('em-required');
-                $('tr.em-requested-embedded-row').removeClass('em-requested-embedded-row');
-                $('tr.em-required-embedded-row').removeClass('em-required-embedded-row');
                 $('.em-requested-embedded').removeClass('em-requested-embedded');
                 $('.em-required-embedded').removeClass('em-required-embedded');
             };
@@ -232,13 +232,10 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 					fieldRow.addClass(className);
                     return;
                 }
-
-                var controls = getFieldControls(fieldName).filter(':visible');
-                var containingRow = controls.first().closest('tr');
-                if (containingRow.length) {
-                    containingRow.addClass(className + '-embedded-row');
-                } else {
-                    controls.addClass(className + '-embedded');
+                var controls = getFieldControls(fieldName);
+                var embeddedField = controls.first().closest('.rc-field-embed');
+                if (embeddedField.length && embeddedField.is(':visible')) {
+                    embeddedField.addClass(className + '-embedded');
                 }
 			};
 
@@ -332,21 +329,18 @@ class RequestedAndRequiredFields extends \ExternalModules\AbstractExternalModule
 				tr.em-required .labelrc, tr.em-required .data {
 					background: " . $settings['required-hlcolour'] . ";
 				}
-                tr.em-requested-embedded-row > td {
-                    background: " . $settings['requested-hlcolour'] . " !important;
-                }
-                tr.em-required-embedded-row > td {
-                    background: " . $settings['required-hlcolour'] . " !important;
+                .em-requested-embedded,
+                .em-required-embedded {
+                    display: inline-block !important;
+                    padding: 5px !important;
+                    border-radius: 5px !important;
+                    border: 3px solid rgba(0, 0, 0, 0.35) !important;
                 }
                 .em-requested-embedded {
-                    outline: 3px solid " . $settings['requested-hlcolour'] . " !important;
-                    outline-offset: 2px;
-                    border-radius: 3px;
+                    background: " . $settings['requested-hlcolour'] . " !important;
                 }
                 .em-required-embedded {
-                    outline: 3px solid " . $settings['required-hlcolour'] . " !important;
-                    outline-offset: 2px;
-                    border-radius: 3px;
+                    background: " . $settings['required-hlcolour'] . " !important;
                 }
 			</style>";
 		}
